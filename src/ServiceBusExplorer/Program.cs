@@ -70,6 +70,7 @@ namespace Microsoft.Azure.ServiceBusExplorer
                             argument = args[i];
                             value = args[i + 1];
                         }
+
                         if ((string.Compare(args[i], "/c", StringComparison.InvariantCultureIgnoreCase) == 0 ||
                             string.Compare(args[i], "-c", StringComparison.InvariantCultureIgnoreCase) == 0) &&
                             args.Length > i + 1 &&
@@ -78,6 +79,7 @@ namespace Microsoft.Azure.ServiceBusExplorer
                             argument = args[i];
                             value = args[i + 1];
                         }
+
                         if ((string.Compare(args[i], "/q", StringComparison.InvariantCultureIgnoreCase) == 0 ||
                             string.Compare(args[i], "-q", StringComparison.InvariantCultureIgnoreCase) == 0) &&
                             args.Length > i + 1 &&
@@ -85,6 +87,7 @@ namespace Microsoft.Azure.ServiceBusExplorer
                         {
                             FilterExpressionHelper.QueueFilterExpression = args[i + 1];
                         }
+
                         if ((string.Compare(args[i], "/t", StringComparison.InvariantCultureIgnoreCase) == 0 ||
                             string.Compare(args[i], "-t", StringComparison.InvariantCultureIgnoreCase) == 0) &&
                             args.Length > i + 1 &&
@@ -92,6 +95,7 @@ namespace Microsoft.Azure.ServiceBusExplorer
                         {
                             FilterExpressionHelper.TopicFilterExpression = args[i + 1];
                         }
+
                         if ((string.Compare(args[i], "/s", StringComparison.InvariantCultureIgnoreCase) == 0 ||
                             string.Compare(args[i], "-s", StringComparison.InvariantCultureIgnoreCase) == 0) &&
                             args.Length > i + 1 &&
@@ -101,6 +105,7 @@ namespace Microsoft.Azure.ServiceBusExplorer
                         }
                     }
                 }
+
                 if (!string.IsNullOrWhiteSpace(argument) &&
                     !string.IsNullOrWhiteSpace(value))
                 {
@@ -110,6 +115,7 @@ namespace Microsoft.Azure.ServiceBusExplorer
                 {
                     Application.Run(new MainForm());
                 }
+
             }
             // ReSharper disable EmptyGeneralCatchClause
             catch (Exception)

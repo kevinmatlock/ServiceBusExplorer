@@ -278,6 +278,10 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
             GetEventDataGeneratorsFromConfiguration();
             GetServiceBusNamespaceSettingsFromConfiguration();
             ReadEventHubPartitionCheckpointFile();
+              this.Show();
+            connectToolStripMenuItem_Click(null, null);
+         
+	//from my changes
             UpdateSavedConnectionsMenu();
         }
 
@@ -586,6 +590,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                     HandleNodeMouseClick(topicListNode);
                     return;
                 }
+
                 // RelayDescription Entity
                 if (args.EntityType == EntityType.Relay)
                 {
@@ -616,6 +621,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                     HandleNodeMouseClick(relayListNode);
                     return;
                 }
+
                 // EventHubDescription Entity
                 if (args.EntityType == EntityType.EventHub)
                 {
@@ -646,6 +652,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                     HandleNodeMouseClick(eventHubListNode);
                     return;
                 }
+
                 // NotificationHubDescription Entity
                 if (args.EntityType == EntityType.NotificationHub)
                 {
@@ -676,6 +683,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                     HandleNodeMouseClick(notificationHubListNode);
                     return;
                 }
+
                 // SubscriptionDescription Entity
                 if (args.EntityType == EntityType.Subscription)
                 {
@@ -731,6 +739,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                     serviceBusTreeView.SelectedNode = null;
                     return;
                 }
+
                 // RuleDescription Entity
                 if (args.EntityType == EntityType.Rule)
                 {
@@ -6424,6 +6433,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                 {
                     return;
                 }
+
                 if (string.Compare(argumentName, "/n", StringComparison.InvariantCultureIgnoreCase) == 0 ||
                     string.Compare(argumentName, "-n", StringComparison.InvariantCultureIgnoreCase) == 0)
                 {
@@ -6433,6 +6443,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                         WriteToLog(string.Format(NoNamespaceWithKeyMessageFormat, argumentValue));
                         return;
                     }
+
                     var ns = item.Value;
                     if (ns != null)
                     {
@@ -6440,12 +6451,14 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                         serviceBusHelper.Connect(serviceBusNamespace);
                     }
                 }
+
                 if (string.Compare(argumentName, "/c", StringComparison.InvariantCultureIgnoreCase) == 0 ||
                     string.Compare(argumentName, "-c", StringComparison.InvariantCultureIgnoreCase) == 0)
                 {
                     var serviceBusNamespace = ServiceBusNamespace.GetServiceBusNamespace("Manual", argumentValue, StaticWriteToLog);
                     serviceBusHelper.Connect(serviceBusNamespace);
                 }
+
                 panelMain.Controls.Clear();
                 panelMain.BackColor = SystemColors.Window;
                 GetEntities(EntityType.All);
