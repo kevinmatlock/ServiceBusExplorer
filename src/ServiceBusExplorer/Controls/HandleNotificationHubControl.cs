@@ -37,13 +37,16 @@ using System.Web.Script.Serialization;
 using System.Windows.Forms;
 using Microsoft.Azure.NotificationHubs;
 using Microsoft.Azure.NotificationHubs.Messaging;
-using Microsoft.Azure.ServiceBusExplorer.Forms;
-using Microsoft.Azure.ServiceBusExplorer.Helpers;
-using Microsoft.Azure.ServiceBusExplorer.Properties;
+using ServiceBusExplorer.Forms;
+using ServiceBusExplorer.Helpers;
+using ServiceBusExplorer.UIHelpers;
+using ServiceBusExplorer.Properties;
+using ServiceBusExplorer.Utilities.Helpers;
+using ServiceBusExplorer.NotificationHubs.Helpers;
 
 #endregion
 
-namespace Microsoft.Azure.ServiceBusExplorer.Controls
+namespace ServiceBusExplorer.Controls
 {
     public partial class HandleNotificationHubControl : UserControl
     {
@@ -117,8 +120,8 @@ namespace Microsoft.Azure.ServiceBusExplorer.Controls
         private const string DuplicateDetectionHistoryTimeWindowSecondsMustBeANumber = "The Seconds value of the DuplicateDetectionHistoryTimeWindow field must be a number.";
         private const string DuplicateDetectionHistoryTimeWindowMillisecondsMustBeANumber = "The Milliseconds value of the DuplicateDetectionHistoryTimeWindow field must be a number.";
         private const string NotificationPayloadCannotBeNull = "The notification payload cannot be null.";
-        private const string JsonPayloadTemplateCannotBeNull = "The json payload cannot be null.";
-        private const string PayloadIsNotInJsonFormat = "The payload is not in json format.";
+        private const string JsonPayloadTemplateCannotBeNull = "The JSON payload cannot be null.";
+        private const string PayloadIsNotInJsonFormat = "The payload is not in JSON format.";
         private const string RegistrationsRetrievedFormat = "[{0}] registrations were retrieved from the notification hub [{1}].";
         private const string RegistrationsDeletedFormat = "[1] registration was deleted from the notification hub [{1}]: RegistrationId=[{0}]";
         private const string RegistrationsUpdatedFormat = "[1] registration was updated in the notification hub [{1}]: RegistrationId=[{0}]";

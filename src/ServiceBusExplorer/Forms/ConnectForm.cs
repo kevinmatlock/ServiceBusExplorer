@@ -25,14 +25,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Drawing;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using System.Xml;
-using Microsoft.Azure.ServiceBusExplorer.Helpers;
+using ServiceBusExplorer.Helpers;
+using ServiceBusExplorer.Utilities.Helpers;
 using Microsoft.ServiceBus;
 using Microsoft.ServiceBus.Messaging;
 
@@ -40,7 +38,7 @@ using Microsoft.ServiceBus.Messaging;
 
 // ReSharper disable once CheckNamespace
 
-namespace Microsoft.Azure.ServiceBusExplorer.Forms
+namespace ServiceBusExplorer.Forms
 {
     public partial class ConnectForm : Form
     {
@@ -81,12 +79,17 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
             "Endpoint=sb://<machinename>/<servicebusnamespace>;StsEndpoint=https://<machinename>:9355/<servicebusnamespace>;\r\n" +
             "RuntimePort=9354;ManagementPort=9355;WindowsUsername=<username>;WindowsDomain=<domain/machinename>;WindowsPassword=<password>";
 
-        private const string UriTooltip = "Gets or sets the Uri of the service bus namespace endpoint.";
+        private const string UriTooltip = "Gets or sets the URI of the service bus namespace endpoint.";
 
         //***************************
         // Messages
         //***************************
         private const string ConnectionStringCannotBeNull = "The connection string cannot be null.";
+
+        private const string ConnectionStringCannotBeEntitySpecific = "The connection string cannot be entity specific.";
+
+        private const string ConnectionStringCannotBeEntitySpecificDetails = "Please make sure there is no \"EntityPath\" in the connection string. The connection string should be a namespace-level connection string and have the manage permission.";
+
 
         #endregion
 
@@ -238,6 +241,17 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                 if (string.IsNullOrWhiteSpace(ConnectionString))
                 {
                     MainForm.StaticWriteToLog(ConnectionStringCannotBeNull);
+                    return;
+                }
+                if (ConnectionStringHelper.IsEntitySpecific(txtUri.Text))
+                {
+                    MainForm.StaticWriteToLog(ConnectionStringCannotBeEntitySpecific);
+                    MessageBox.Show(
+                        this, 
+                        $"{ConnectionStringCannotBeEntitySpecific}\n\n{ConnectionStringCannotBeEntitySpecificDetails}", 
+                        this.Text,  // reuse title of this window
+                        MessageBoxButtons.OK, 
+                        MessageBoxIcon.Exclamation);
                     return;
                 }
             }
@@ -608,6 +622,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                     MainForm.StaticWriteToLog("The connection string of the Service Bus namespace cannot be null.");
                     return;
                 }
+
                 ServiceBusConnectionStringBuilder serviceBusConnectionStringBuilder;
                 try
                 {
@@ -623,6 +638,18 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                     serviceBusConnectionStringBuilder.Endpoints.Count == 0)
                 {
                     MainForm.StaticWriteToLog("The connection string does not contain any endpoint.");
+                    return;
+                }
+
+                if (serviceBusConnectionStringBuilder.EntityPath != null)
+                {
+                    MainForm.StaticWriteToLog(ConnectionStringCannotBeEntitySpecific);
+                    MessageBox.Show(
+                        this,
+                        $"{ConnectionStringCannotBeEntitySpecific}\n\n{ConnectionStringCannotBeEntitySpecificDetails}",
+                        "Save connection string",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Exclamation);
                     return;
                 }
 

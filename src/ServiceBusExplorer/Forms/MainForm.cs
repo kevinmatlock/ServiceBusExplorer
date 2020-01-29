@@ -22,9 +22,11 @@
 #region Using Directives
 
 using Microsoft.Azure.NotificationHubs;
-using Microsoft.Azure.ServiceBusExplorer.Controls;
-using Microsoft.Azure.ServiceBusExplorer.Enums;
-using Microsoft.Azure.ServiceBusExplorer.Helpers;
+using ServiceBusExplorer.Controls;
+using ServiceBusExplorer.Enums;
+using ServiceBusExplorer.Helpers;
+using ServiceBusExplorer.UIHelpers;
+using ServiceBusExplorer.Utilities.Helpers;
 using Microsoft.ServiceBus.Messaging;
 using System;
 using System.Collections;
@@ -46,7 +48,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 #endregion
 
-namespace Microsoft.Azure.ServiceBusExplorer.Forms
+namespace ServiceBusExplorer.Forms
 {
     public partial class MainForm : Form
     {
@@ -206,6 +208,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
         private readonly FieldInfo eventClickFieldInfo;
         private readonly PropertyInfo eventsPropertyInfo;
         private string messageText;
+        private string messageContentType;
         private string relayMessageText;
         private string messageFile;
         private string label;
@@ -260,7 +263,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
             splitterContainerDistance = splitContainer.SplitterDistance;
             treeViewFontSize = (decimal)serviceBusTreeView.Font.Size;
             logFontSize = (decimal)lstLog.Font.Size;
-            Trace.Listeners.Add(new LogTraceListener());
+            Trace.Listeners.Add(new LogTraceListener(MainForm.StaticWriteToLog));
             mainSingletonMainForm = this;
             serviceBusHelper = new ServiceBusHelper(WriteToLog);
             serviceBusHelper.OnCreate += serviceBusHelper_OnCreate;
@@ -283,6 +286,20 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
          
 	//from my changes
             UpdateSavedConnectionsMenu();
+            DisplayNewVersionInformation();
+        }
+
+        void DisplayNewVersionInformation()
+        {
+            if (!VersionProvider.IsLatestVersion(out var releaseInfo, WriteToLog))
+            {
+                linkLabelNewVersionAvailable.Visible = true;
+                linkLabelNewVersionAvailable.Text = $"New Version {releaseInfo.Version} is available";
+            }
+            else
+            {
+                linkLabelNewVersionAvailable.Visible = false;
+            }
         }
 
         private void UpdateSavedConnectionsMenu()
@@ -382,6 +399,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                 Label = label,
                 MessageFile = messageFile,
                 MessageText = messageText,
+                MessageContentType = messageContentType,
 
                 SelectedEntities = selectedEntites,
                 MessageBodyType = messageBodyType,
@@ -437,6 +455,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                 label = optionForm.MainSettings.Label;
                 messageFile = optionForm.MainSettings.MessageFile;
                 messageText = optionForm.MainSettings.MessageText;
+                messageContentType = optionForm.MainSettings.MessageContentType;
 
                 selectedEntites = optionForm.MainSettings.SelectedEntities;
                 messageBodyType = optionForm.MainSettings.MessageBodyType;
@@ -1800,7 +1819,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                         var description = nodeTag;
                         if (description.IsDynamic)
                         {
-                            var relayCollection = serviceBusHelper.GetRelays();
+                            var relayCollection = serviceBusHelper.GetRelays(MainForm.SingletonMainForm.ServerTimeout);
                             var relayDescriptions = relayCollection as IList<RelayDescription> ?? relayCollection.ToList();
                             if (relayDescriptions.Any())
                             {
@@ -2088,7 +2107,10 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
             var rules = serviceBusHelper.GetRules(subscriptionDescription);
             var ruleDescriptions = rules as RuleDescription[] ?? rules.ToArray();
             if (!ruleDescriptions.Any())
+            {
+                subscriptionNode.Nodes.Clear();
                 return;
+            }
             var subscriptionNodeWasExpanded = subscriptionNode.IsExpanded;
             var rulesNodeWasExpanded = subscriptionNode.Nodes.Count > 0 && subscriptionNode.Nodes[0].IsExpanded;
             subscriptionNode.Nodes.Clear();
@@ -3713,6 +3735,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                 Label = label,
                 MessageFile = messageFile,
                 MessageText = messageText,
+                MessageContentType = messageContentType,
                 SelectedEntities = selectedEntites,
                 MessageBodyType = messageBodyType,
                 ConnectivityMode = ServiceBusHelper.ConnectivityMode
@@ -3788,6 +3811,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
             label = readSettings.Label;
 
             messageText = readSettings.MessageText;
+            messageContentType = readSettings.MessageContentType;
             messageFile = readSettings.MessageFile;
 
             selectedEntites = readSettings.SelectedEntities;
@@ -3895,6 +3919,18 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
             set
             {
                 messageText = value;
+            }
+        }
+
+        public string MessageContentType
+        {
+            get
+            {
+                return messageContentType;
+            }
+            set
+            {
+                messageContentType = value;
             }
         }
 
@@ -4410,7 +4446,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                         {
                             try
                             {
-                                var relayServices = serviceBusHelper.GetRelays();
+                                var relayServices = serviceBusHelper.GetRelays(MainForm.SingletonMainForm.ServerTimeout);
 
                                 relayServiceListNode.Text = Constants.RelayEntities;
 
@@ -4447,7 +4483,8 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                     {
                         try
                         {
-                            var queues = serviceBusHelper.GetQueues(FilterExpressionHelper.QueueFilterExpression);
+                            var queues = serviceBusHelper.GetQueues(FilterExpressionHelper.QueueFilterExpression,
+                                MainForm.SingletonMainForm.ServerTimeout);
                             queueListNode.Text = string.IsNullOrWhiteSpace(FilterExpressionHelper.QueueFilterExpression)
                                 ? Constants.QueueEntities
                                 : FilteredQueueEntities;
@@ -4483,7 +4520,8 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                     {
                         try
                         {
-                            var topics = serviceBusHelper.GetTopics(FilterExpressionHelper.TopicFilterExpression);
+                            var topics = serviceBusHelper.GetTopics(FilterExpressionHelper.TopicFilterExpression,
+                                MainForm.SingletonMainForm.ServerTimeout);
                             topicListNode.Text = string.IsNullOrWhiteSpace(FilterExpressionHelper.TopicFilterExpression)
                                 ? Constants.TopicEntities
                                 : FilteredTopicEntities;
@@ -5332,7 +5370,45 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
             var path = entityType == null ?
                        CreateFileName(string.Format(EntitiesFileNameFormat, serviceBusHelper.Namespace, entityName)) :
                        CreateFileName(string.Format(EntityFileNameFormat, serviceBusHelper.Namespace, entityName, entityType));
-            WriteToLog(string.Format(EntitiesExported, SaveEntityToFile(xml, path)));
+            var savedFile = SaveEntityToFile(xml, path);
+            if (savedFile != null)
+            {
+                WriteToLog(string.Format(EntitiesExported, savedFile));
+            }
+        }
+
+        private void copyStringToClipboard(string str)
+        {
+            using (var form = new ClipboardForm(str))
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    Clipboard.SetText(str);
+                }
+            }
+        }
+
+        private void copyNamespaceUrlMenuItem_Click(object sender, EventArgs e)
+        {
+            Uri uri = serviceBusHelper.NamespaceUri;
+            if (uri == null)
+            {
+                return;
+            }
+            var prettyUri = uri.AbsoluteUri[uri.AbsoluteUri.Length - 1] == '/'
+                          ? uri.AbsoluteUri.Substring(0, uri.AbsoluteUri.Length - 1)
+                          : uri.AbsoluteUri;
+            copyStringToClipboard(prettyUri);
+        }
+
+        private void copyConnectionStringMenuItem_Click(object sender, EventArgs e)
+        {
+            var connectionString = serviceBusHelper.ConnectionString;
+            if (connectionString == null)
+            {
+                return;
+            }
+            copyStringToClipboard(connectionString);
         }
 
         private void copyEntityUrl_Click(object sender, EventArgs e)
@@ -6640,6 +6716,14 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
             catch (Exception ex)
             {
                 HandleException(ex);
+            }
+        }
+
+        private void linkLabelNewVersionAvailable_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            using (var form = new NewVersionAvailableForm())
+            {
+                form.ShowDialog();
             }
         }
         #endregion

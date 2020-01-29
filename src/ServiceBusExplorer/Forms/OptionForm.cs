@@ -31,12 +31,12 @@ using System.Windows.Forms;
 
 using Microsoft.ServiceBus;
 
-using Microsoft.Azure.ServiceBusExplorer.Enums;
-using Microsoft.Azure.ServiceBusExplorer.Helpers;
+using ServiceBusExplorer.Enums;
+using ServiceBusExplorer.Helpers;
 
 #endregion
 
-namespace Microsoft.Azure.ServiceBusExplorer.Forms
+namespace ServiceBusExplorer.Forms
 {
     public partial class OptionForm : Form
     {
@@ -60,11 +60,15 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
             "User Configuration File",
             "Both (User file will override)"
         };
+
+        ConfigFileUse originalConfigFileUse;
         #endregion
 
         #region Public Constructor
         public OptionForm(MainSettings mainSettings, ConfigFileUse configFileUse)
         {
+            originalConfigFileUse = configFileUse;
+
             InitializeComponent();
 
             // Put data in the list controls
@@ -294,6 +298,11 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
             MainSettings.MessageText = txtMessageText.Text;
         }
 
+        void txtMessageContentType_TextChanged(object sender, EventArgs e)
+        {
+            MainSettings.MessageContentType = txtMessageContentType.Text;
+        }
+
         void cboConnectivityMode_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (Enum.TryParse<ConnectivityMode>(cboConnectivityMode.Text, true, out var connectivityMode))
@@ -432,7 +441,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                     return BothConfigFileIndex;
 
                 default:
-                    throw new InvalidDataException("Unexpexted value passed to " +
+                    throw new InvalidDataException("Unexpected value passed to " +
                                                    nameof(GetIndexForConfigFileUseUIString));
             }
         }
@@ -460,6 +469,18 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
             var defaultSettings = MainSettings.GetDefault();
             var readSettings = ConfigurationHelper.GetMainProperties(configFileUse,
                 defaultSettings, writeToLog: null);
+
+            // Special case: if we have switched from user config file to application config file,
+            // we still have to update that particular setting in the user config file, or it won't
+            // persist through program restart.
+            if (originalConfigFileUse != ConfigFileUse.ApplicationConfig 
+                && configFileUse == ConfigFileUse.ApplicationConfig)
+            {
+                var userConfiguration = TwoFilesConfiguration.Create(ConfigFileUse.UserConfig);
+                userConfiguration.SetValue(ConfigurationParameters.ConfigurationConfigFileParameter, configFileUse);
+                userConfiguration.Save();
+            }
+
             var configuration = TwoFilesConfiguration.Create(configFileUse);
 
             configuration.SetValue(ConfigurationParameters.ConfigurationConfigFileParameter, configFileUse);
@@ -506,6 +527,8 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
                 MainSettings.MessageText);
             SaveSetting(configuration, readSettings, ConfigurationParameters.FileParameter,
                 MainSettings.MessageFile);
+            SaveSetting(configuration, readSettings, ConfigurationParameters.MessageContentTypeParameter,
+                MainSettings.MessageContentType);
 
             SaveSetting(configuration, readSettings, ConfigurationParameters.ConnectivityMode,
                 MainSettings.ConnectivityMode);
@@ -559,6 +582,7 @@ namespace Microsoft.Azure.ServiceBusExplorer.Forms
             txtLabel.Text = mainSettings.Label;
             txtMessageFile.Text = mainSettings.MessageFile;
             txtMessageText.Text = mainSettings.MessageText;
+            txtMessageContentType.Text = mainSettings.MessageContentType;
             logNumericUpDown.Value = mainSettings.LogFontSize;
             treeViewNumericUpDown.Value = mainSettings.TreeViewFontSize;
             retryCountNumericUpDown.Value = mainSettings.RetryCount;
